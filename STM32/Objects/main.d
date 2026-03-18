@@ -14,3 +14,4 @@
 .\objects\main.o: D:\KeilTemp\Keil\STM32F1xx_DFP\2.2.0\Device\StdPeriph_Driver\inc\stm32f10x_rcc.h
 .\objects\main.o: D:\KeilTemp\Keil\STM32F1xx_DFP\2.2.0\Device\StdPeriph_Driver\inc\misc.h
 .\objects\main.o: lcd.h
+.\objects\main.o: D:\KeilTemp\Keil\STM32F1xx_DFP\2.2.0\Device\StdPeriph_Driver\inc\stm32f10x_usart.h

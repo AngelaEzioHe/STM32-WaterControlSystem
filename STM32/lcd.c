@@ -2,16 +2,16 @@
 #include "font.h"
 
 // 软件 SPI 引脚宏定义 (绑定我们规划的引脚)
-#define LCD_SCL_Clr() GPIO_ResetBits(GPIOA, GPIO_Pin_5)
-#define LCD_SCL_Set() GPIO_SetBits(GPIOA, GPIO_Pin_5)
-#define LCD_SDA_Clr() GPIO_ResetBits(GPIOA, GPIO_Pin_7)
-#define LCD_SDA_Set() GPIO_SetBits(GPIOA, GPIO_Pin_7)
-#define LCD_RES_Clr() GPIO_ResetBits(GPIOB, GPIO_Pin_12)
-#define LCD_RES_Set() GPIO_SetBits(GPIOB, GPIO_Pin_12)
-#define LCD_DC_Clr()  GPIO_ResetBits(GPIOB, GPIO_Pin_13)
-#define LCD_DC_Set()  GPIO_SetBits(GPIOB, GPIO_Pin_13)
-#define LCD_CS_Clr()  GPIO_ResetBits(GPIOB, GPIO_Pin_14)
-#define LCD_CS_Set()  GPIO_SetBits(GPIOB, GPIO_Pin_14)
+#define LCD_SCL_Clr() GPIO_ResetBits(GPIOB, GPIO_Pin_4)
+#define LCD_SCL_Set() GPIO_SetBits(GPIOB, GPIO_Pin_4)
+#define LCD_SDA_Clr() GPIO_ResetBits(GPIOB, GPIO_Pin_5)
+#define LCD_SDA_Set() GPIO_SetBits(GPIOB, GPIO_Pin_5)
+#define LCD_RES_Clr() GPIO_ResetBits(GPIOB, GPIO_Pin_6)
+#define LCD_RES_Set() GPIO_SetBits(GPIOB, GPIO_Pin_6)
+#define LCD_DC_Clr()  GPIO_ResetBits(GPIOB, GPIO_Pin_7)
+#define LCD_DC_Set()  GPIO_SetBits(GPIOB, GPIO_Pin_7)
+#define LCD_CS_Clr()  GPIO_ResetBits(GPIOB, GPIO_Pin_8)
+#define LCD_CS_Set()  GPIO_SetBits(GPIOB, GPIO_Pin_8)
 
 // 简单的微秒级延时
 static void LCD_Delay(volatile uint32_t i) {
@@ -72,14 +72,21 @@ static void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) 
 void LCD_Init(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
     
-    // 开启时钟和引脚配置不变
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
+    // 1. 开启 GPIOB 和 AFIO (复用功能) 的时钟 
+    // (因为全在 GPIOB，GPIOA 其实可以不开了，如果别的代码没用到的话)
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+    
+    // 2. 核心操作：禁用 JTAG，保留 SWD。成功释放 PB4！
+    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+    // 3. 批量初始化 PB4, PB5, PB6, PB7, PB8, PB9 为推挽输出
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+    // 4. 点亮背光：将 PB9 (BLK) 拉高，确保屏幕背光开启
+    GPIO_SetBits(GPIOB, GPIO_Pin_9);
 
     // 硬件复位
     LCD_RES_Clr();
